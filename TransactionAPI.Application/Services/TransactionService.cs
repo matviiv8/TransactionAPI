@@ -84,9 +84,9 @@ namespace TransactionAPI.Application.Services
             }
         }
 
-        public async Task<Transaction> UpdateTransactionStatus(Transaction transaction, Status newStatus)
+        public async Task<Transaction> UpdateTransactionStatus(Transaction transaction, Status? newStatus)
         {
-            transaction.Status = newStatus;
+            transaction.Status = (Status)newStatus;
 
             _dbContext.Transactions.Update(transaction);
             await _dbContext.SaveChangesAsync();
