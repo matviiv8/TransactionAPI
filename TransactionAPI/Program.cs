@@ -7,6 +7,7 @@ using System.Text;
 using TransactionAPI.Application.Services;
 using TransactionAPI.Infrastructure.Context;
 using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,6 +74,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.AddMemoryCache();
+
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -86,6 +89,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCachingMiddleware();
 
 app.UseHttpsRedirection();
 
