@@ -11,17 +11,19 @@ namespace TransactionAPI.Application.Services
     public class UserService : IUserService
     {
         private readonly IConfiguration _configuration;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public UserService(IConfiguration configuration)
+        public UserService(IConfiguration configuration, IPasswordHasher passwordHasher)
         {
             this._configuration = configuration;
+            this._passwordHasher = passwordHasher;
         }
 
         public async Task<User> Authenticate(LoginViewModel loginModel)
         {
             var user = await GetUserByUsername(loginModel.Username);
 
-            return HashPassword(loginModel.Password) == user.Password ? user : throw new ArgumentException("Incorrect password.");
+            return _passwordHasher.VerifyPassword(loginModel.Password, user.Password) ? user : throw new ArgumentException("Incorrect password.");
         }
 
         public async Task<User> GetUserByUsername(string username)
@@ -49,7 +51,7 @@ namespace TransactionAPI.Application.Services
 
         public async Task<User> Register(User newUser)
         {
-            newUser.Password = HashPassword(newUser.Password);
+            newUser.Password = _passwordHasher.HashPassword(newUser.Password);
 
             try
             {
@@ -99,15 +101,6 @@ namespace TransactionAPI.Application.Services
             };
 
             return user;
-        }
-
-        private string HashPassword(string password)
-        {
-            using (SHA256 sha256Hash = SHA256.Create())
-            {
-                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(bytes);
-            }
         }
     }
 }
