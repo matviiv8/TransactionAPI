@@ -31,8 +31,11 @@ namespace TransactionAPI.Middlewares
 
                 await _next(context);
 
-                var response = await FormatResponse(context.Response);
-                _cache.Set(cacheKey, response, TimeSpan.FromMinutes(20));
+                if (context.Response.StatusCode == StatusCodes.Status200OK)
+                {
+                    var response = await FormatResponse(context.Response);
+                    _cache.Set(cacheKey, response, TimeSpan.FromMinutes(20));
+                }
 
                 responseBody.Seek(0, SeekOrigin.Begin);
                 await responseBody.CopyToAsync(originalBodyStream);

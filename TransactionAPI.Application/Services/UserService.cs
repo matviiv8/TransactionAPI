@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using TransactionAPI.Domain.Models;
 using TransactionAPI.Infrastructure.Interfaces;
 using TransactionAPI.Infrastructure.ViewModels.Accounts;
@@ -49,6 +50,14 @@ namespace TransactionAPI.Application.Services
             return null;
         }
 
+        public async Task<bool> IsValidEmail(string email)
+        {
+            string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            Match match = Regex.Match(email, pattern);
+
+            return match.Success;
+        }
+
         public async Task<User> Register(User newUser)
         {
             newUser.Password = _passwordHasher.HashPassword(newUser.Password);
@@ -56,6 +65,7 @@ namespace TransactionAPI.Application.Services
             try
             {
                 await AddUserToDatabase(newUser);
+
                 return newUser;
             }
             catch (Exception exception)

@@ -13,5 +13,6 @@ namespace TransactionAPI.Infrastructure.Interfaces
         Task<User> Authenticate(LoginViewModel loginModel);
         Task<User> GetUserByUsername(string username);
         Task<User> Register(User newUser);
+        Task<bool> IsValidEmail(string email);
     }
 }

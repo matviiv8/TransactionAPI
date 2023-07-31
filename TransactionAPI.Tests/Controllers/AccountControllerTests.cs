@@ -55,6 +55,38 @@ namespace TransactionAPI.Tests.Controllers
         }
 
         [Test]
+        public async Task Login_UserWithAllEmptyFields_ReturnsBadRequest()
+        {
+            // Arrange
+            var loginModel = new LoginViewModel { Username = string.Empty, Password = string.Empty };
+
+            // Act
+            var actualResult = await _accountController.Login(loginModel);
+            var badRequestResult = actualResult as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(badRequestResult);
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
+            Assert.AreEqual(badRequestResult.Value, "All fields are required for login.");
+        }
+
+        [Test]
+        public async Task Login_UserWithOneEmptyField_ReturnsBadRequest()
+        {
+            // Arrange
+            var loginModel = new LoginViewModel { Username = "testuser", Password = string.Empty };
+
+            // Act
+            var actualResult = await _accountController.Login(loginModel);
+            var badRequestResult = actualResult as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(badRequestResult);
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
+            Assert.AreEqual(badRequestResult.Value, "All fields are required for login.");
+        }
+
+        [Test]
         public async Task Login_ExceptionThrown_ReturnsInternalServerError()
         {
             // Arrange
@@ -105,6 +137,7 @@ namespace TransactionAPI.Tests.Controllers
             var token = "generated_jwt_token";
 
             _userServiceMock.Setup(service => service.GetUserByUsername(registerModel.Username)).ReturnsAsync((User)null);
+            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(true);
 
             var registeredUser = new User
             {
@@ -145,6 +178,7 @@ namespace TransactionAPI.Tests.Controllers
             };
 
             _userServiceMock.Setup(service => service.GetUserByUsername(registerModel.Username)).ReturnsAsync(existingUser);
+            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(true);
 
             // Act
             var actualResult = await _accountController.Registration(registerModel);
@@ -154,6 +188,48 @@ namespace TransactionAPI.Tests.Controllers
             Assert.NotNull(badRequestResult);
             Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
             Assert.AreEqual(badRequestResult.Value, "Username is already taken.");
+        }
+
+        [Test]
+        public async Task Registration_UserWithAllEmptyFields_ReturnsBadRequest()
+        {
+            // Arrange
+            var registerModel = new RegisterViewModel
+            {
+                Username = string.Empty,
+                Password = string.Empty,
+                Email = string.Empty
+            };
+
+            // Act
+            var actualResult = await _accountController.Registration(registerModel);
+            var badRequestResult = actualResult as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(badRequestResult);
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
+            Assert.AreEqual(badRequestResult.Value, "All fields are required for registration.");
+        }
+
+        [Test]
+        public async Task Registration_UserWithOneEmptyField_ReturnsBadRequest()
+        {
+            // Arrange
+            var registerModel = new RegisterViewModel
+            {
+                Username = "testuser",
+                Password = "password123",
+                Email = string.Empty
+            };
+
+            // Act
+            var actualResult = await _accountController.Registration(registerModel);
+            var badRequestResult = actualResult as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(badRequestResult);
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
+            Assert.AreEqual(badRequestResult.Value, "All fields are required for registration.");
         }
 
         [Test]
@@ -168,6 +244,7 @@ namespace TransactionAPI.Tests.Controllers
             };
 
             _userServiceMock.Setup(service => service.GetUserByUsername(registerModel.Username)).ReturnsAsync((User)null);
+            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(true);
             _userServiceMock.Setup(service => service.Register(It.IsAny<User>())).ReturnsAsync((User)null);
 
             // Act
@@ -178,6 +255,29 @@ namespace TransactionAPI.Tests.Controllers
             Assert.NotNull(badRequestResult);
             Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
             Assert.AreEqual(badRequestResult.Value, "Registration failed.");
+        }
+
+        [Test]
+        public async Task Registration_InvalidEmail_ReturnsBadRequest()
+        {
+            // Arrange
+            var registerModel = new RegisterViewModel
+            {
+                Username = "newuser",
+                Password = "password123",
+                Email = "testexamplecom"
+            };
+
+            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(false);
+
+            // Act
+            var actualResult = await _accountController.Registration(registerModel);
+            var badRequestResult = actualResult as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(badRequestResult);
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
+            Assert.AreEqual(badRequestResult.Value, "Incorrect email format.");
         }
 
         [Test]
@@ -192,6 +292,7 @@ namespace TransactionAPI.Tests.Controllers
             };
             var exception = new Exception("Some error message");
 
+            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(true);
             _userServiceMock.Setup(service => service.GetUserByUsername(registerModel.Username)).ThrowsAsync(exception);
 
             // Act

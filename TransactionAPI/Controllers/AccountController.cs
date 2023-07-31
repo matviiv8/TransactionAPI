@@ -35,12 +35,18 @@ namespace TransactionAPI.Controllers
         /// <response code="500">Internal server error.</response>
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login([FromBody] LoginViewModel loginModel)
         {
             try
             {
+                if (string.IsNullOrEmpty(loginModel.Username) || string.IsNullOrEmpty(loginModel.Password))
+                {
+                    return BadRequest("All fields are required for login.");
+                }
+
                 var user = await _userService.Authenticate(loginModel);
 
                 if (user != null)
@@ -78,6 +84,18 @@ namespace TransactionAPI.Controllers
         {
             try
             {
+                if (string.IsNullOrEmpty(registerModel.Username) || string.IsNullOrEmpty(registerModel.Password) || string.IsNullOrEmpty(registerModel.Email))
+                {
+                    return BadRequest("All fields are required for registration.");
+                }
+
+                var isValidEmail = await _userService.IsValidEmail(registerModel.Email);
+
+                if (!isValidEmail)
+                {
+                    return BadRequest("Incorrect email format.");
+                }
+
                 var existingUser = await _userService.GetUserByUsername(registerModel.Username);
 
                 if (existingUser != null)
@@ -97,12 +115,11 @@ namespace TransactionAPI.Controllers
                 if (registeredUser != null)
                 {
                     var token = await _jwtTokenService.GenerateToken(registeredUser);
+
                     return Ok(token);
                 }
-                else
-                {
-                    return BadRequest("Registration failed.");
-                }
+
+                return BadRequest("Registration failed.");
             }
             catch (Exception exception)
             {
