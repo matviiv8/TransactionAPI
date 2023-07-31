@@ -35,6 +35,7 @@ The TransactionAPI project is built using the following technologies:
 - SQL Server: The database management system used to store transaction data.
 - Swagger: A tool for generating interactive API documentation, allowing users to explore and test the API endpoints.
 - JWT (JSON Web Tokens): A secure method for token-based authentication, used to protect API endpoints from unauthorized access.
+- NUnit: A popular unit testing framework for .NET applications, used to write and execute unit tests to ensure the correctness of the application's code and functionality.
 
 ## License
 
