@@ -91,6 +91,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseRequestLoggingMiddleware();
+
 app.UseCachingMiddleware();
 
 app.UseHttpsRedirection();
