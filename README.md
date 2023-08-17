@@ -27,6 +27,16 @@ TransactionAPI is a API for handling transactions. It allows users to import tra
 | GET   | /api/transaction/alltransactions        | Get a list of transactions with filtering options.             |
 | GET   | /api/transaction/updatetransactionstatus/{id} | Update transaction status by its identifier.            |
 
+## Middlewares
+
+### CachingMiddleware
+
+The caching middleware represented by the `CachingMiddleware` class plays an important role in optimizing the performance of our server. This middleware allows you to save and use cached versions of HTTP responses for repeated requests, which improves performance and reduces the load on the server.
+
+### RequestLoggingMiddleware
+
+Request Logging middleware implemented as `RequestLoggingMiddleware` class. It records important information about each request and the responses to them. This middleware serves as an important tool for monitoring, debugging and optimizing our server operations.
+
 ## Technologies Used
 The TransactionAPI project is built using the following technologies:
 
