@@ -2,59 +2,39 @@
 using TransactionAPI.Domain.Enums;
 using TransactionAPI.Domain.Models;
 using TransactionAPI.Infrastructure.Interfaces;
-using TransactionAPI.Infrastructure.ViewModels.Transactions;
+using OfficeOpenXml;
+using Type = TransactionAPI.Domain.Enums.Type;
 
 namespace TransactionAPI.Application.Services
 {
     public class FileService : IFileService
     {
         private readonly ITransactionService _transactionService;
+        private readonly ITransactionParsingService _transactionParsingService;
 
-        public FileService(ITransactionService transactionService)
+        public FileService(ITransactionService transactionService, ITransactionParsingService transactionParsingService)
         {
             this._transactionService = transactionService;
+            this._transactionParsingService = transactionParsingService;
         }
 
         public async Task ProcessExcelFile(Stream fileStream)
         {
-            fileStream.Seek(0, SeekOrigin.Begin);
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-            using (var reader = new StreamReader(fileStream))
+            using (var package = new ExcelPackage(fileStream))
             {
-                reader.ReadLine();
+                var worksheet = package.Workbook.Worksheets[0];
 
-                while (!reader.EndOfStream)
+                int startRow = 2;
+
+                for (int row = startRow; row <= worksheet.Dimension.End.Row; row++)
                 {
-                    string line = reader.ReadLine();
-                    if (!string.IsNullOrWhiteSpace(line))
+                    var transaction = _transactionParsingService.ParseTransactionRow(worksheet, row);
+
+                    if (transaction != null)
                     {
-                        string[] values = line.Split(',');
-                        if (values.Length >= 5 &&
-                            int.TryParse(values[0], out int transactionId) &&
-                            Enum.TryParse(values[1], out Status status) &&
-                            Enum.TryParse(values[2], out Domain.Enums.Type type) &&
-                            decimal.TryParse(values[4], NumberStyles.Currency, new CultureInfo("en-US"), out decimal amount))
-                        {
-                            var transaction = new Transaction
-                            {
-                                TransactionId = transactionId,
-                                Status = status,
-                                Type = type,
-                                ClientName = values[3],
-                                Amount = amount
-                            };
-
-                            var existingTransaction = await _transactionService.GetTransactionById(transaction.TransactionId);
-
-                            if (existingTransaction != null)
-                            {
-                                await _transactionService.UpdateTransactionStatus(existingTransaction, transaction.Status);
-                            }
-                            else
-                            {
-                                await _transactionService.AddTransactionToDatabase(transaction);
-                            }
-                        }
+                        await _transactionService.MergeTransaction(transaction);
                     }
                 }
             }

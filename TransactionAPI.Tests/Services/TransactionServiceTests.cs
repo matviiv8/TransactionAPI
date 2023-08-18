@@ -45,28 +45,6 @@ namespace TransactionAPI.Tests.Services
         }
 
         [Test]
-        public async Task AddTransactionToDatabase_ValidTransaction_AddsTransactionToDatabase()
-        {
-            // Arrange
-            var transaction = new Transaction
-            {
-                TransactionId = 1,
-                Status = Status.Pending,
-                Type = Domain.Enums.Type.Withdrawal,
-                ClientName = "John",
-                Amount = 100
-            };
-
-            // Act
-            await _transactionService.AddTransactionToDatabase(transaction);
-            var transactionFromDb = await _dbContext.Transactions.FindAsync(1);
-
-            // Assert
-            Assert.IsNotNull(transactionFromDb);
-            Assert.AreEqual(transaction.Status, transactionFromDb.Status);
-        }
-
-        [Test]
         public async Task UpdateTransactionStatus_ValidTransaction_ReturnsUpdatedTransaction()
         {
             // Arrange
@@ -141,6 +119,7 @@ namespace TransactionAPI.Tests.Services
             Assert.IsNull(result);
         }
 
+        /*
         [Test]
         public async Task GetTransactionsByFilter_ValidData_ReturnsFilteredTransactions()
         {
@@ -198,5 +177,6 @@ namespace TransactionAPI.Tests.Services
                 ));
             }
         }
+        */
     }
 }

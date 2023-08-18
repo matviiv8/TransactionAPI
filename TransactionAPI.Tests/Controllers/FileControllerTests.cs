@@ -36,7 +36,7 @@ namespace TransactionAPI.Tests.Controllers
         public async Task ProcessExcelFile_ValidCsvFile_ReturnsOk()
         {
             // Arrange
-            var file = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("Test CSV Data")), 0, 0, "Data", "data.csv");
+            var file = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("Test CSV Data")), 0, 0, "Data", "data.xlsx");
 
             // Act
             var actualResult = await _fileController.ProcessExcelFile(file);
@@ -69,7 +69,7 @@ namespace TransactionAPI.Tests.Controllers
         public async Task ProcessExcelFile_InternalServerError_ReturnsInternalServerError()
         {
             // Arrange
-            var file = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("Test Data")), 0, 0, "Data", "data.csv");
+            var file = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("Test Data")), 0, 0, "Data", "data.xlsx");
             var exception = new Exception("Some error message");
 
             _fileServiceMock.Setup(service => service.ProcessExcelFile(It.IsAny<Stream>())).ThrowsAsync(exception);

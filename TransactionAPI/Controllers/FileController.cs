@@ -42,7 +42,7 @@ namespace TransactionAPI.Controllers
         {
             try
             {
-                if (!file.FileName.EndsWith(".csv"))
+                if (!file.FileName.EndsWith(".xlsx"))
                 {
                     return BadRequest("The file format is incorrect.");
                 }
@@ -67,7 +67,7 @@ namespace TransactionAPI.Controllers
         }
 
         /// <summary>
-        /// Export a list of transactions with or without a filter to a file.
+        /// Export a list of transactions with or without a filter to a CSV file.
         /// </summary>
         /// <param name="filter">The filter criteria for retrieving transactions.</param>
         /// <returns>A message indicating the success or failure of exporting the transactions.</returns>
