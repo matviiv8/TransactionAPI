@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TransactionAPI.Domain.Enums;
 using TransactionAPI.Domain.Models;
+using Type = TransactionAPI.Domain.Enums.Type;
 
 namespace TransactionAPI.Infrastructure.Context
 {
@@ -25,7 +26,7 @@ namespace TransactionAPI.Infrastructure.Context
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             var transactionStatusConverter = new EnumToStringConverter<Status>();
-            var transactionTypeConverter = new EnumToStringConverter<Domain.Enums.Type>();
+            var transactionTypeConverter = new EnumToStringConverter<Type>();
 
             modelBuilder.Entity<Transaction>()
                 .Property(transaction => transaction.Status)

@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Infrastructure.Interfaces.Files;
+using TransactionAPI.Infrastructure.Interfaces.Transactions;
 using TransactionAPI.Infrastructure.ViewModels.Transactions;
+using Type = TransactionAPI.Domain.Enums.Type;
 
 namespace TransactionAPI.Controllers
 {
@@ -42,7 +44,7 @@ namespace TransactionAPI.Controllers
         {
             try
             {
-                if (!file.FileName.EndsWith(".csv"))
+                if (!file.FileName.EndsWith(".xlsx"))
                 {
                     return BadRequest("The file format is incorrect.");
                 }
@@ -67,7 +69,7 @@ namespace TransactionAPI.Controllers
         }
 
         /// <summary>
-        /// Export a list of transactions with or without a filter to a file.
+        /// Export a list of transactions with or without a filter to a CSV file.
         /// </summary>
         /// <param name="filter">The filter criteria for retrieving transactions.</param>
         /// <returns>A message indicating the success or failure of exporting the transactions.</returns>
@@ -84,8 +86,8 @@ namespace TransactionAPI.Controllers
         {
             try
             {
-                var types = new List<Domain.Enums.Type>();
-                var transactionType = filter.Type as Domain.Enums.Type?;
+                var types = new List<Type>();
+                var transactionType = filter.Type as Type?;
 
                 if (transactionType != null)
                 {

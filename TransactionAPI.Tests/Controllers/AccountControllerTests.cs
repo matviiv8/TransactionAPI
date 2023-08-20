@@ -11,14 +11,20 @@ using System.Threading.Tasks;
 using TransactionAPI.Application.Services;
 using TransactionAPI.Controllers;
 using TransactionAPI.Domain.Models;
-using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Infrastructure.Interfaces.Accounts;
+using TransactionAPI.Infrastructure.Interfaces.Authentication;
+using TransactionAPI.Infrastructure.Interfaces.Registration;
 using TransactionAPI.Infrastructure.ViewModels.Accounts;
+using TransactionAPI.Infrastructure.ViewModels.Tokens;
 
 namespace TransactionAPI.Tests.Controllers
 {
     public class AccountControllerTests
     {
         private AccountController _accountController;
+        private Mock<IAuthenticationService> _authenticationServiceMock;
+        private Mock<IRegistrationService> _registrationServiceMock;
+        private Mock<IEmailValidationService> _emailValidationServiceMock;
         private Mock<IUserService> _userServiceMock;
         private Mock<IJwtTokenService> _jwtTokenServiceMock;
         private Mock<ILogger<AccountController>> _loggerMock;
@@ -26,11 +32,21 @@ namespace TransactionAPI.Tests.Controllers
         [SetUp]
         public void Setup()
         {
-            this._userServiceMock = new Mock<IUserService>();
-            this._jwtTokenServiceMock = new Mock<IJwtTokenService>();
-            this._loggerMock = new Mock<ILogger<AccountController>>();
+            _authenticationServiceMock = new Mock<IAuthenticationService>();
+            _registrationServiceMock = new Mock<IRegistrationService>();
+            _emailValidationServiceMock = new Mock<IEmailValidationService>();
+            _userServiceMock = new Mock<IUserService>();
+            _jwtTokenServiceMock = new Mock<IJwtTokenService>();
+            _loggerMock = new Mock<ILogger<AccountController>>();
 
-            this._accountController = new AccountController(_userServiceMock.Object, _jwtTokenServiceMock.Object, _loggerMock.Object);
+            _accountController = new AccountController(
+                _authenticationServiceMock.Object,
+                _registrationServiceMock.Object,
+                _loggerMock.Object,
+                _emailValidationServiceMock.Object,
+                _userServiceMock.Object,
+                _jwtTokenServiceMock.Object
+            );
         }
 
         [Test]
@@ -38,52 +54,34 @@ namespace TransactionAPI.Tests.Controllers
         {
             // Arrange
             var loginModel = new LoginViewModel { Username = "testuser", Password = "testpassword" };
-            var user = new User { Username = loginModel.Username, Password = loginModel.Password };
-            var token = "generated_jwt_token";
+            var userTokens = new TokensViewModel { AccessToken = "access_token", RefreshToken = "refresh_token" };
 
-            _userServiceMock.Setup(service => service.Authenticate(loginModel)).ReturnsAsync(user);
-            _jwtTokenServiceMock.Setup(service => service.GenerateToken(user)).ReturnsAsync(token);
+            _authenticationServiceMock.Setup(service => service.Authenticate(loginModel)).ReturnsAsync(userTokens);
 
             // Act
-            var actualResult = await _accountController.Login(loginModel);
-            var okResult = actualResult as ObjectResult;
+            var result = await _accountController.Login(loginModel);
+            var okResult = result as OkObjectResult;
 
             // Assert
             Assert.NotNull(okResult);
             Assert.AreEqual((int)HttpStatusCode.OK, okResult.StatusCode);
-            Assert.AreEqual(token, okResult.Value);
+            Assert.AreEqual(userTokens, okResult.Value);
         }
 
         [Test]
-        public async Task Login_UserWithAllEmptyFields_ReturnsBadRequest()
+        public async Task Login_UserWithAllEmptyFields_ReturnsUnauthorizedWithInvalidCredentialsMessage()
         {
             // Arrange
             var loginModel = new LoginViewModel { Username = string.Empty, Password = string.Empty };
 
             // Act
-            var actualResult = await _accountController.Login(loginModel);
-            var badRequestResult = actualResult as BadRequestObjectResult;
+            var result = await _accountController.Login(loginModel);
+            var unauthorizedResult = result as UnauthorizedObjectResult;
 
             // Assert
-            Assert.NotNull(badRequestResult);
-            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
-            Assert.AreEqual(badRequestResult.Value, "All fields are required for login.");
-        }
-
-        [Test]
-        public async Task Login_UserWithOneEmptyField_ReturnsBadRequest()
-        {
-            // Arrange
-            var loginModel = new LoginViewModel { Username = "testuser", Password = string.Empty };
-
-            // Act
-            var actualResult = await _accountController.Login(loginModel);
-            var badRequestResult = actualResult as BadRequestObjectResult;
-
-            // Assert
-            Assert.NotNull(badRequestResult);
-            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
-            Assert.AreEqual(badRequestResult.Value, "All fields are required for login.");
+            Assert.NotNull(unauthorizedResult);
+            Assert.AreEqual((int)HttpStatusCode.Unauthorized, unauthorizedResult.StatusCode);
+            Assert.AreEqual("Invalid credentials", unauthorizedResult.Value);
         }
 
         [Test]
@@ -93,35 +91,16 @@ namespace TransactionAPI.Tests.Controllers
             var loginModel = new LoginViewModel { Username = "testuser", Password = "testpassword" };
             var exception = new Exception("Some error message");
 
-            _userServiceMock.Setup(service => service.Authenticate(loginModel)).ThrowsAsync(exception);
+            _authenticationServiceMock.Setup(service => service.Authenticate(loginModel)).ThrowsAsync(exception);
 
             // Act
-            var actualResult = await _accountController.Login(loginModel);
-            var internalServerResult = actualResult as ObjectResult;
+            var result = await _accountController.Login(loginModel);
+            var internalServerErrorResult = result as ObjectResult;
 
             // Assert
-            Assert.NotNull(internalServerResult);
-            Assert.AreEqual((int)HttpStatusCode.InternalServerError, internalServerResult.StatusCode);
-            Assert.AreEqual(internalServerResult.Value, exception.Message);
-        }
-
-        [Test]
-        public async Task Login_UserNotFound_ReturnsNotFound()
-        {
-            // Arrange
-            var loginModel = new LoginViewModel { Username = "testuser", Password = "testpassword" };
-            User nullUser = null;
-
-            _userServiceMock.Setup(service => service.Authenticate(loginModel)).ReturnsAsync(nullUser);
-
-            // Act
-            var actualResult = await _accountController.Login(loginModel);
-            var notFoundResult = actualResult as NotFoundObjectResult;
-
-            // Assert
-            Assert.NotNull(notFoundResult);
-            Assert.AreEqual((int)HttpStatusCode.NotFound, notFoundResult.StatusCode);
-            Assert.AreEqual(notFoundResult.Value, "User not found.");
+            Assert.NotNull(internalServerErrorResult);
+            Assert.AreEqual((int)HttpStatusCode.InternalServerError, internalServerErrorResult.StatusCode);
+            Assert.AreEqual(exception.Message, internalServerErrorResult.Value);
         }
 
         [Test]
@@ -134,33 +113,24 @@ namespace TransactionAPI.Tests.Controllers
                 Password = "password123",
                 Email = "test@example.com"
             };
-            var token = "generated_jwt_token";
+            var userTokens = new TokensViewModel { AccessToken = "access_token", RefreshToken = "refresh_token" };
 
+            _emailValidationServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).Returns(true);
             _userServiceMock.Setup(service => service.GetUserByUsername(registerModel.Username)).ReturnsAsync((User)null);
-            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(true);
-
-            var registeredUser = new User
-            {
-                Username = registerModel.Username,
-                Password = registerModel.Password,
-                Email = registerModel.Email
-            };
-
-            _userServiceMock.Setup(service => service.Register(It.IsAny<User>())).ReturnsAsync(registeredUser);
-            _jwtTokenServiceMock.Setup(service => service.GenerateToken(registeredUser)).ReturnsAsync(token);
+            _registrationServiceMock.Setup(service => service.Register(registerModel)).ReturnsAsync(userTokens);
 
             // Act
-            var actualResult = await _accountController.Registration(registerModel);
-            var okResult = actualResult as ObjectResult;
+            var result = await _accountController.Registration(registerModel);
+            var okResult = result as OkObjectResult;
 
             // Assert
             Assert.NotNull(okResult);
             Assert.AreEqual((int)HttpStatusCode.OK, okResult.StatusCode);
-            Assert.AreEqual(token, okResult.Value);
+            Assert.AreEqual(userTokens, okResult.Value);
         }
 
         [Test]
-        public async Task Registration_ExistingUser_ReturnsBadRequest()
+        public async Task Registration_ExistingUser_ReturnsBadRequestWithUsernameTakenMessage()
         {
             // Arrange
             var registerModel = new RegisterViewModel
@@ -178,11 +148,11 @@ namespace TransactionAPI.Tests.Controllers
             };
 
             _userServiceMock.Setup(service => service.GetUserByUsername(registerModel.Username)).ReturnsAsync(existingUser);
-            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(true);
+            _emailValidationServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).Returns(true);
 
             // Act
-            var actualResult = await _accountController.Registration(registerModel);
-            var badRequestResult = actualResult as BadRequestObjectResult;
+            var result = await _accountController.Registration(registerModel);
+            var badRequestResult = result as BadRequestObjectResult;
 
             // Assert
             Assert.NotNull(badRequestResult);
@@ -191,49 +161,40 @@ namespace TransactionAPI.Tests.Controllers
         }
 
         [Test]
-        public async Task Registration_UserWithAllEmptyFields_ReturnsBadRequest()
+        public async Task Registration_InvalidModel_ReturnsBadRequestWithModelStateErrors()
         {
             // Arrange
             var registerModel = new RegisterViewModel
             {
                 Username = string.Empty,
-                Password = string.Empty,
-                Email = string.Empty
-            };
-
-            // Act
-            var actualResult = await _accountController.Registration(registerModel);
-            var badRequestResult = actualResult as BadRequestObjectResult;
-
-            // Assert
-            Assert.NotNull(badRequestResult);
-            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
-            Assert.AreEqual(badRequestResult.Value, "All fields are required for registration.");
-        }
-
-        [Test]
-        public async Task Registration_UserWithOneEmptyField_ReturnsBadRequest()
-        {
-            // Arrange
-            var registerModel = new RegisterViewModel
-            {
-                Username = "testuser",
                 Password = "password123",
-                Email = string.Empty
+                Email = "test@example.com"
             };
 
+            _accountController.ModelState.AddModelError("Username", "Username is required.");
+            _accountController.ModelState.AddModelError("Email", "Email is required.");
+
             // Act
-            var actualResult = await _accountController.Registration(registerModel);
-            var badRequestResult = actualResult as BadRequestObjectResult;
+            var result = await _accountController.Registration(registerModel);
+            var badRequestResult = result as BadRequestObjectResult;
+            var errors = (SerializableError)badRequestResult.Value;
 
             // Assert
             Assert.NotNull(badRequestResult);
             Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
-            Assert.AreEqual(badRequestResult.Value, "All fields are required for registration.");
+
+            Assert.IsTrue(errors.ContainsKey("Username"));
+            Assert.IsTrue(errors.ContainsKey("Email"));
+
+            var usernameError = errors["Username"];
+            Assert.AreEqual("Username is required.", ((string[])usernameError)[0]);
+
+            var emailError = errors["Email"];
+            Assert.AreEqual("Email is required.", ((string[])emailError)[0]);
         }
 
         [Test]
-        public async Task Registration_RegistrationFailed_ReturnsBadRequest()
+        public async Task Registration_RegistrationFailed_ReturnsBadRequestWithRegistrationFailedMessage()
         {
             // Arrange
             var registerModel = new RegisterViewModel
@@ -244,12 +205,12 @@ namespace TransactionAPI.Tests.Controllers
             };
 
             _userServiceMock.Setup(service => service.GetUserByUsername(registerModel.Username)).ReturnsAsync((User)null);
-            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(true);
-            _userServiceMock.Setup(service => service.Register(It.IsAny<User>())).ReturnsAsync((User)null);
+            _emailValidationServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).Returns(true);
+            _registrationServiceMock.Setup(service => service.Register(It.IsAny<RegisterViewModel>())).ReturnsAsync((TokensViewModel)null);
 
             // Act
-            var actualResult = await _accountController.Registration(registerModel);
-            var badRequestResult = actualResult as BadRequestObjectResult;
+            var result = await _accountController.Registration(registerModel);
+            var badRequestResult = result as BadRequestObjectResult;
 
             // Assert
             Assert.NotNull(badRequestResult);
@@ -258,7 +219,7 @@ namespace TransactionAPI.Tests.Controllers
         }
 
         [Test]
-        public async Task Registration_InvalidEmail_ReturnsBadRequest()
+        public async Task Registration_InvalidEmail_ReturnsBadRequestWithIncorrectEmailFormatMessage()
         {
             // Arrange
             var registerModel = new RegisterViewModel
@@ -268,11 +229,11 @@ namespace TransactionAPI.Tests.Controllers
                 Email = "testexamplecom"
             };
 
-            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(false);
+            _emailValidationServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).Returns(false);
 
             // Act
-            var actualResult = await _accountController.Registration(registerModel);
-            var badRequestResult = actualResult as BadRequestObjectResult;
+            var result = await _accountController.Registration(registerModel);
+            var badRequestResult = result as BadRequestObjectResult;
 
             // Assert
             Assert.NotNull(badRequestResult);
@@ -281,7 +242,7 @@ namespace TransactionAPI.Tests.Controllers
         }
 
         [Test]
-        public async Task Registration_ExceptionThrown_ReturnsInternalServerError()
+        public async Task Registration_ExceptionThrown_ReturnsInternalServerErrorWithExceptionMessage()
         {
             // Arrange
             var registerModel = new RegisterViewModel
@@ -292,17 +253,94 @@ namespace TransactionAPI.Tests.Controllers
             };
             var exception = new Exception("Some error message");
 
-            _userServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).ReturnsAsync(true);
+            _emailValidationServiceMock.Setup(service => service.IsValidEmail(registerModel.Email)).Returns(true);
             _userServiceMock.Setup(service => service.GetUserByUsername(registerModel.Username)).ThrowsAsync(exception);
 
             // Act
-            var actualResult = await _accountController.Registration(registerModel);
-            var internalServerResult = actualResult as ObjectResult;
+            var result = await _accountController.Registration(registerModel);
+            var internalServerResult = result as ObjectResult;
 
             // Assert
             Assert.NotNull(internalServerResult);
             Assert.AreEqual((int)HttpStatusCode.InternalServerError, internalServerResult.StatusCode);
             Assert.AreEqual(internalServerResult.Value, exception.Message);
         }
+
+        [Test]
+        public async Task RefreshToken_ValidRefreshToken_ReturnsNewTokens()
+        {
+            // Arrange
+            var refreshTokenModel = new RefreshTokenViewModel { RefreshToken = "valid_refresh_token" };
+            var newTokens = new TokensViewModel { AccessToken = "new_access_token", RefreshToken = "new_refresh_token" };
+
+            _jwtTokenServiceMock.Setup(service => service.RefreshTokens(refreshTokenModel.RefreshToken)).ReturnsAsync(newTokens);
+
+            // Act
+            var result = await _accountController.RefreshToken(refreshTokenModel);
+            var okResult = result as ObjectResult;
+
+            // Assert
+            Assert.NotNull(okResult);
+            Assert.AreEqual((int)HttpStatusCode.OK, okResult.StatusCode);
+
+            var returnedTokens = okResult.Value as TokensViewModel;
+            Assert.NotNull(returnedTokens);
+            Assert.AreEqual(newTokens.AccessToken, returnedTokens.AccessToken);
+            Assert.AreEqual(newTokens.RefreshToken, returnedTokens.RefreshToken);
+        }
+
+        [Test]
+        public async Task RefreshToken_InvalidRefreshToken_ReturnsBadRequestWithInvalidRefreshTokenMessage()
+        {
+            // Arrange
+            var refreshTokenModel = new RefreshTokenViewModel { RefreshToken = string.Empty };
+
+            // Act
+            var result = await _accountController.RefreshToken(refreshTokenModel);
+            var badRequestResult = result as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(badRequestResult);
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
+            Assert.AreEqual("Refresh token is required.", badRequestResult.Value);
+        }
+
+        [Test]
+        public async Task RefreshToken_RefreshTokenServiceReturnsNull_ReturnsBadRequestWithInvalidRefreshTokenMessage()
+        {
+            // Arrange
+            var refreshTokenModel = new RefreshTokenViewModel { RefreshToken = "valid_refresh_token" };
+
+            _jwtTokenServiceMock.Setup(service => service.RefreshTokens(refreshTokenModel.RefreshToken)).ReturnsAsync((TokensViewModel)null);
+
+            // Act
+            var result = await _accountController.RefreshToken(refreshTokenModel);
+            var badRequestResult = result as BadRequestObjectResult;
+
+            // Assert
+            Assert.NotNull(badRequestResult);
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, badRequestResult.StatusCode);
+            Assert.AreEqual("Invalid refresh token.", badRequestResult.Value);
+        }
+
+        [Test]
+        public async Task RefreshToken_ExceptionThrown_ReturnsInternalServerErrorWithExceptionMessage()
+        {
+            // Arrange
+            var refreshTokenModel = new RefreshTokenViewModel { RefreshToken = "valid_refresh_token" };
+            var exception = new Exception("Some error message");
+
+            _jwtTokenServiceMock.Setup(service => service.RefreshTokens(refreshTokenModel.RefreshToken)).ThrowsAsync(exception);
+
+            // Act
+            var result = await _accountController.RefreshToken(refreshTokenModel);
+            var internalServerResult = result as ObjectResult;
+
+            // Assert
+            Assert.NotNull(internalServerResult);
+            Assert.AreEqual((int)HttpStatusCode.InternalServerError, internalServerResult.StatusCode);
+            Assert.AreEqual(exception.Message, internalServerResult.Value);
+        }
+
     }
 }

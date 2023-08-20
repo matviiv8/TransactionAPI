@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TransactionAPI.Domain.Models;
 
-namespace TransactionAPI.Infrastructure.Interfaces
+namespace TransactionAPI.Infrastructure.Interfaces.Files
 {
     public interface IFileService
     {

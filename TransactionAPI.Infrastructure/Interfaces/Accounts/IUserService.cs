@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using TransactionAPI.Domain.Models;
 using TransactionAPI.Infrastructure.ViewModels.Accounts;
 
-namespace TransactionAPI.Infrastructure.Interfaces
+namespace TransactionAPI.Infrastructure.Interfaces.Accounts
 {
     public interface IUserService
     {
-        Task<User> Authenticate(LoginViewModel loginModel);
+        Task AddUserToDatabase(User newUser);
         Task<User> GetUserByUsername(string username);
-        Task<User> Register(User newUser);
-        Task<bool> IsValidEmail(string email);
+        Task<User> GetUserByRefreshToken(string refreshToken);
+        Task UpdateRefreshToken(User user);
     }
 }

@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TransactionAPI.Domain.Models
+namespace TransactionAPI.Infrastructure.ViewModels.Tokens
 {
-	public class Tokens
+	public class TokensViewModel
 	{
-		public string Token { get; set; }
+		public string AccessToken { get; set; }
 
 		public string RefreshToken { get; set; }
 	}

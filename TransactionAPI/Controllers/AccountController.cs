@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransactionAPI.Domain.Models;
-using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Infrastructure.Interfaces.Accounts;
+using TransactionAPI.Infrastructure.Interfaces.Authentication;
+using TransactionAPI.Infrastructure.Interfaces.Registration;
 using TransactionAPI.Infrastructure.ViewModels.Accounts;
+using TransactionAPI.Infrastructure.ViewModels.Tokens;
 
 namespace TransactionAPI.Controllers
 {
@@ -14,12 +17,19 @@ namespace TransactionAPI.Controllers
     [Route("api/account")]
     public class AccountController : Controller
     {
+        private readonly IAuthenticationService _authenticationService;
+        private readonly IRegistrationService _registrationService;
+        private readonly IEmailValidationService _emailValidationService;
         private readonly IUserService _userService;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly ILogger<AccountController> _logger;
 
-        public AccountController(IUserService userService, IJwtTokenService jwtTokenService, ILogger<AccountController> logger)
+        public AccountController(IAuthenticationService authenticationService, IRegistrationService registrationService,  ILogger<AccountController> logger,
+            IEmailValidationService emailValidationService, IUserService userService, IJwtTokenService jwtTokenService)
         {
+            this._authenticationService = authenticationService;
+            this._registrationService = registrationService;
+            this._emailValidationService = emailValidationService;
             this._userService = userService;
             this._jwtTokenService = jwtTokenService;
             this._logger = logger;
@@ -31,32 +41,24 @@ namespace TransactionAPI.Controllers
         /// <param name="loginModel">Model for user login.</param>
         /// <returns>JWT token for authentication or error message.</returns>
         /// <response code="200">Successful login, returns a JWT token.</response>
-        /// <response code="404">User not found.</response>
+        /// <response code="401">Invalid credentials.</response>
         /// <response code="500">Internal server error.</response>
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login([FromBody] LoginViewModel loginModel)
         {
             try
             {
-                if (string.IsNullOrEmpty(loginModel.Username) || string.IsNullOrEmpty(loginModel.Password))
+                var userTokens = await _authenticationService.Authenticate(loginModel);
+
+                if (userTokens == null)
                 {
-                    return BadRequest("All fields are required for login.");
+                    return Unauthorized("Invalid credentials");
                 }
 
-                var user = await _userService.Authenticate(loginModel);
-
-                if (user != null)
-                {
-                    var token = await _jwtTokenService.GenerateToken(user);
-
-                    return Ok(token);
-                }
-
-                return NotFound("User not found.");
+                return Ok(userTokens);
             }
             catch (Exception exception)
             {
@@ -84,12 +86,12 @@ namespace TransactionAPI.Controllers
         {
             try
             {
-                if (string.IsNullOrEmpty(registerModel.Username) || string.IsNullOrEmpty(registerModel.Password) || string.IsNullOrEmpty(registerModel.Email))
+                if (!ModelState.IsValid)
                 {
-                    return BadRequest("All fields are required for registration.");
+                    return BadRequest(ModelState);
                 }
 
-                var isValidEmail = await _userService.IsValidEmail(registerModel.Email);
+                var isValidEmail = _emailValidationService.IsValidEmail(registerModel.Email);
 
                 if (!isValidEmail)
                 {
@@ -103,27 +105,58 @@ namespace TransactionAPI.Controllers
                     return BadRequest("Username is already taken.");
                 }
 
-                var newUser = new User
+                var registeredUserTokens = await _registrationService.Register(registerModel);
+
+                if (registeredUserTokens == null)
                 {
-                    Username = registerModel.Username,
-                    Password = registerModel.Password,
-                    Email = registerModel.Email,
-                };
-
-                var registeredUser = await _userService.Register(newUser);
-
-                if (registeredUser != null)
-                {
-                    var token = await _jwtTokenService.GenerateToken(registeredUser);
-
-                    return Ok(token);
+                    return BadRequest("Registration failed.");
                 }
 
-                return BadRequest("Registration failed.");
+                return Ok(registeredUserTokens);
             }
             catch (Exception exception)
             {
                 _logger.LogError($"Error in AccountController.Registration(RegisterViewModel registerModel): {exception.Message}");
+                _logger.LogError($"Inner exception:\n{exception.InnerException}");
+                _logger.LogTrace(exception.StackTrace);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
+            }
+        }
+
+        /// <summary>
+        /// Refresh JWT tokens using a valid refresh token.
+        /// </summary>
+        /// <param name="refreshTokenModel">Model containing the refresh token.</param>
+        /// <returns>New JWT tokens for authentication or an error message.</returns>
+        /// <response code="200">Tokens successfully refreshed.</response>
+        /// <response code="400">Invalid or missing refresh token.</response>
+        /// <response code="500">Internal server error.</response>
+        [HttpPost("refresh")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenViewModel refreshTokenModel)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(refreshTokenModel.RefreshToken))
+                {
+                    return BadRequest("Refresh token is required.");
+                }
+
+                var newTokens = await _jwtTokenService.RefreshTokens(refreshTokenModel.RefreshToken);
+
+                if (newTokens != null)
+                {
+                    return Ok(newTokens);
+                }
+
+                return BadRequest("Invalid refresh token.");
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError($"Error in AccountController.RefreshToken(RefreshTokenViewModel refreshTokenModel): {exception.Message}");
                 _logger.LogError($"Inner exception:\n{exception.InnerException}");
                 _logger.LogTrace(exception.StackTrace);
 
