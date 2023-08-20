@@ -9,7 +9,7 @@ using System.Security.Claims;
 using TransactionAPI.Controllers;
 using TransactionAPI.Domain.Enums;
 using TransactionAPI.Domain.Models;
-using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Infrastructure.Interfaces.Transactions;
 using TransactionAPI.Infrastructure.ViewModels.Transactions;
 
 namespace TransactionAPI.Tests.Controllers

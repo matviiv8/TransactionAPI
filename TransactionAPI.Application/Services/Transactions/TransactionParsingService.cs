@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using TransactionAPI.Domain.Enums;
 using TransactionAPI.Domain.Models;
-using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Infrastructure.Interfaces.Transactions;
 using Type = TransactionAPI.Domain.Enums.Type;
 
-namespace TransactionAPI.Application.Services
+namespace TransactionAPI.Application.Services.Transactions
 {
     public class TransactionParsingService : ITransactionParsingService
     {

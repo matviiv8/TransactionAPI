@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Infrastructure.Interfaces.Files;
+using TransactionAPI.Infrastructure.Interfaces.Transactions;
 using TransactionAPI.Infrastructure.ViewModels.Transactions;
+using Type = TransactionAPI.Domain.Enums.Type;
 
 namespace TransactionAPI.Controllers
 {
@@ -84,8 +86,8 @@ namespace TransactionAPI.Controllers
         {
             try
             {
-                var types = new List<Domain.Enums.Type>();
-                var transactionType = filter.Type as Domain.Enums.Type?;
+                var types = new List<Type>();
+                var transactionType = filter.Type as Type?;
 
                 if (transactionType != null)
                 {

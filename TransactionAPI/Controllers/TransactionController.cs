@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransactionAPI.Domain.Enums;
-using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Infrastructure.Interfaces.Transactions;
 using TransactionAPI.Infrastructure.ViewModels.Transactions;
 
 namespace TransactionAPI.Controllers
@@ -92,7 +92,6 @@ namespace TransactionAPI.Controllers
                 { 
                     return NotFound("Transaction not found.");
                 }
-
 
                 var updatedTransaction = await _transactionService.UpdateTransactionStatus(transaction, status);
 

@@ -10,7 +10,8 @@ using System.Text;
 using TransactionAPI.Controllers;
 using TransactionAPI.Domain.Enums;
 using TransactionAPI.Domain.Models;
-using TransactionAPI.Infrastructure.Interfaces;
+using TransactionAPI.Infrastructure.Interfaces.Files;
+using TransactionAPI.Infrastructure.Interfaces.Transactions;
 using TransactionAPI.Infrastructure.ViewModels.Transactions;
 
 namespace TransactionAPI.Tests.Controllers

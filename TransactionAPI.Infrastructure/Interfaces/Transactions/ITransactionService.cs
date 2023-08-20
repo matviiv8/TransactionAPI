@@ -7,7 +7,7 @@ using TransactionAPI.Domain.Enums;
 using TransactionAPI.Domain.Models;
 using Type = TransactionAPI.Domain.Enums.Type;
 
-namespace TransactionAPI.Infrastructure.Interfaces
+namespace TransactionAPI.Infrastructure.Interfaces.Transactions
 {
     public interface ITransactionService
     {
