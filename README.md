@@ -22,6 +22,7 @@ TransactionAPI is a API for handling transactions. It allows users to import tra
 |-------|------------------------------------------|------------------------------------------------------------------|
 | POST  | /api/account/login                       | User login and JWT token retrieval.                              |
 | POST  | /api/account/registration                | User registration.                                              |
+| POST  | /api/account/refresh                     | Refresh JWT token using refresh token.                          |
 | POST  | /api/file/upload                         | Upload an Excel file for adding transactions to the database.    |
 | GET   | /api/file/export                         | Export transactions in CSV format.                              |
 | GET   | /api/transaction/alltransactions        | Get a list of transactions with filtering options.             |
