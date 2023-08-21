@@ -1,19 +1,10 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using TransactionAPI.Application.Services.Accounts;
 using TransactionAPI.Domain.Models;
 using TransactionAPI.Infrastructure.Context;
-using TransactionAPI.Infrastructure.Interfaces.Accounts;
-using TransactionAPI.Infrastructure.ViewModels.Accounts;
 
 namespace TransactionAPI.Tests.Services.Accounts
 {
@@ -21,7 +12,6 @@ namespace TransactionAPI.Tests.Services.Accounts
     {
         private UserService _userService;
         private IConfiguration _configuration;
-        private IPasswordHasher _passwordHasher;
         private TransactionAPIDbContext _dbContext;
         private Mock<ILogger<UserService>> _loggerMock;
 
@@ -34,8 +24,6 @@ namespace TransactionAPI.Tests.Services.Accounts
                     {"ConnectionStrings:DefaultConnection", "Server=(localdb)\\MSSQLLocalDB;Database=TestDatabase;Trusted_Connection=True;"}
                  })
                  .Build();
-
-            this._passwordHasher = new PasswordHasher();
 
             var options = new DbContextOptionsBuilder<TransactionAPIDbContext>()
                              .UseSqlServer(_configuration.GetConnectionString("DefaultConnection"))
@@ -222,6 +210,53 @@ namespace TransactionAPI.Tests.Services.Accounts
             // Act & Assert
             var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.AddUserToDatabase(newUser));
             Assert.AreEqual("Error while adding user to the database.", exception.Message);
+        }
+
+        [Test]
+        public async Task UpdateRefreshToken_ValidUser_UpdatesRefreshToken()
+        {
+            // Arrange
+            string username = "existinguser";
+            string password = "password";
+            var expectedUser = new User
+            {
+                Username = username,
+                Password = password,
+                Email = "existinguser@example.com",
+                RefreshToken = "valid_refresh_token"
+            };
+
+            await _dbContext.Users.AddAsync(expectedUser);
+            await _dbContext.SaveChangesAsync();
+
+            expectedUser.RefreshToken = "new_refresh_token";
+
+            // Act
+            await _userService.UpdateRefreshToken(expectedUser);
+
+            // Assert
+            var updatedUser = await _userService.GetUserByUsername(username);
+            Assert.AreEqual(expectedUser.RefreshToken, updatedUser.RefreshToken);
+        }
+
+        [Test]
+        public async Task UpdateRefreshToken_DatabaseError_ThrowsApplicationException()
+        {
+            // Arrange
+            string username = "existinguser";
+            string password = "password";
+            var expectedUser = new User
+            {
+                Username = username,
+                Password = password,
+                Email = "existinguser@example.com",
+                RefreshToken = "valid_refresh_token"
+            };
+            _dbContext.Database.EnsureDeleted();
+
+            // Act & Assert
+            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.UpdateRefreshToken(expectedUser));
+            Assert.AreEqual("Error while updating user's refresh token in the database.", exception.Message);
         }
     }
 }

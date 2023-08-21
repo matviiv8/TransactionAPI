@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TransactionAPI.Application.Services.Accounts;
+﻿using TransactionAPI.Application.Services.Accounts;
 
-namespace TransactionAPI.Tests.Services
+namespace TransactionAPI.Tests.Services.Accounts
 {
     public class PasswordHasherServiceTests
     {

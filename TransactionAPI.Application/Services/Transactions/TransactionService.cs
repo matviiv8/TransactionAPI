@@ -23,7 +23,7 @@ namespace TransactionAPI.Application.Services.Transactions
             this._logger = logger;
         }
 
-        public async Task<List<Transaction>> GetTransactionsByFilter(List<Domain.Enums.Type>? types, Status? status, string? clientName = null)
+        public async Task<List<Transaction>> GetTransactionsByFilter(List<Type>? types, Status? status, string? clientName = null)
         {
             try
             {

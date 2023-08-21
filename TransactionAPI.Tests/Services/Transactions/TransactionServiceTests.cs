@@ -2,12 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TransactionAPI.Application.Services.Transactions;
 using TransactionAPI.Domain.Enums;
 using TransactionAPI.Domain.Models;
@@ -241,7 +235,7 @@ namespace TransactionAPI.Tests.Services.Transactions
         }
 
         [Test]
-        public async Task MergeTransaction_SuccessfullyMergesTransaction()
+        public async Task MergeTransaction_ValidTransaction_SuccessfullyMergesTransaction()
         {
             // Arrange
             var transaction = new Transaction

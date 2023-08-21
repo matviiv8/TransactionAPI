@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TransactionAPI.Domain.Enums;
+﻿using TransactionAPI.Domain.Enums;
+using Type = TransactionAPI.Domain.Enums.Type;
 
 namespace TransactionAPI.Infrastructure.ViewModels.Transactions
 {
     public class TransactionFilterViewModel
     {
-        public List<Domain.Enums.Type>? Types { get; set; }
+        public List<Type>? Types { get; set; }
 
         public Status? Status { get; set; }
 

@@ -1,4 +1,6 @@
-﻿namespace TransactionAPI.Middlewares
+﻿using TransactionAPI.Middlewares;
+
+namespace TransactionAPI.Extensions
 {
     public static class RequestLoggingMiddlewareExtensions
     {
