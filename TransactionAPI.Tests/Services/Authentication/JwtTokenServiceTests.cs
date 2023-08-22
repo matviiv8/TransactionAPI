@@ -1,14 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Moq;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 using TransactionAPI.Application.Services.Authentication;
 using TransactionAPI.Domain.Models;
 using TransactionAPI.Infrastructure.Interfaces.Accounts;
@@ -18,7 +12,6 @@ namespace TransactionAPI.Tests.Services.Authentication
     public class JwtTokenServiceTests
     {
         private JwtTokenService _jwtTokenService;
-        private Mock<JwtTokenService> _jwtTokenServiceMock;
         private Mock<IConfiguration> _configurationMock;
         private Mock<IUserService> _userServiceMock;
         private Mock<ILogger<JwtTokenService>> _loggerMock;

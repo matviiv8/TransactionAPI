@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Text;
 using TransactionAPI.Extensions;
 using TransactionAPI.Infrastructure.Context;
-using TransactionAPI.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
