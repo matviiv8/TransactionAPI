@@ -93,11 +93,10 @@ namespace TransactionAPI.Tests.Services.Accounts
         public void GetUserByRefreshToken_DatabaseError_ThrowsApplicationExceptionAndReturnsNull()
         {
             // Arrange
-            var refreshToken = "valid_refresh_token";
             _dbContext.Database.EnsureDeleted();
 
             // Act
-            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.GetUserByRefreshToken(refreshToken));
+            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.GetUserByRefreshToken(It.IsAny<string>()));
 
             // Assert
             Assert.AreEqual("Error while fetching user by refresh token from the database.", exception.Message);
@@ -158,11 +157,10 @@ namespace TransactionAPI.Tests.Services.Accounts
         public void GetUserByUsername_DatabaseError_ThrowsApplicationExceptionAndReturnsNull()
         {
             // Arrange
-            var username = "testuser";
             _dbContext.Database.EnsureDeleted();
 
             // Act
-            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.GetUserByUsername(username));
+            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.GetUserByUsername(It.IsAny<string>()));
 
             // Assert
             Assert.AreEqual("Error while adding user to the database.", exception.Message);
@@ -197,18 +195,10 @@ namespace TransactionAPI.Tests.Services.Accounts
         public async Task AddUserToDatabase_DatabaseError_ThrowsApplicationException()
         {
             // Arrange
-            var newUser = new User
-            {
-                Username = "newuser",
-                Email = "newuser@example.com",
-                Password = "password",
-                RefreshToken = "valid_refresh_token"
-            };
-
             _dbContext.Database.EnsureDeleted();
 
             // Act & Assert
-            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.AddUserToDatabase(newUser));
+            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.AddUserToDatabase(It.IsAny<User>()));
             Assert.AreEqual("Error while adding user to the database.", exception.Message);
         }
 
@@ -243,19 +233,10 @@ namespace TransactionAPI.Tests.Services.Accounts
         public async Task UpdateRefreshToken_DatabaseError_ThrowsApplicationException()
         {
             // Arrange
-            string username = "existinguser";
-            string password = "password";
-            var expectedUser = new User
-            {
-                Username = username,
-                Password = password,
-                Email = "existinguser@example.com",
-                RefreshToken = "valid_refresh_token"
-            };
             _dbContext.Database.EnsureDeleted();
 
             // Act & Assert
-            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.UpdateRefreshToken(expectedUser));
+            var exception = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.UpdateRefreshToken(It.IsAny<User>()));
             Assert.AreEqual("Error while updating user's refresh token in the database.", exception.Message);
         }
     }

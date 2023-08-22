@@ -25,14 +25,14 @@ namespace TransactionAPI.Tests.Controllers
         [SetUp]
         public void Setup()
         {
-            _authenticationServiceMock = new Mock<IAuthenticationService>();
-            _registrationServiceMock = new Mock<IRegistrationService>();
-            _emailValidationServiceMock = new Mock<IEmailValidationService>();
-            _userServiceMock = new Mock<IUserService>();
-            _jwtTokenServiceMock = new Mock<IJwtTokenService>();
-            _loggerMock = new Mock<ILogger<AccountController>>();
+            this._authenticationServiceMock = new Mock<IAuthenticationService>();
+            this._registrationServiceMock = new Mock<IRegistrationService>();
+            this._emailValidationServiceMock = new Mock<IEmailValidationService>();
+            this._userServiceMock = new Mock<IUserService>();
+            this._jwtTokenServiceMock = new Mock<IJwtTokenService>();
+            this._loggerMock = new Mock<ILogger<AccountController>>();
 
-            _accountController = new AccountController(
+            this._accountController = new AccountController(
                 _authenticationServiceMock.Object,
                 _registrationServiceMock.Object,
                 _loggerMock.Object,
@@ -334,6 +334,5 @@ namespace TransactionAPI.Tests.Controllers
             Assert.AreEqual((int)HttpStatusCode.InternalServerError, internalServerResult.StatusCode);
             Assert.AreEqual(exception.Message, internalServerResult.Value);
         }
-
     }
 }

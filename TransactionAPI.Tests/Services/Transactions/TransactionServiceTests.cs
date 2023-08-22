@@ -46,19 +46,11 @@ namespace TransactionAPI.Tests.Services.Transactions
         public async Task UpdateTransactionStatus_DatabaseError_ThrowsApplicationException()
         {
             // Arrange
-            var transaction = new Transaction
-            {
-                TransactionId = 1,
-                Status = Status.Pending,
-                Type = Type.Withdrawal,
-                ClientName = "John",
-                Amount = 100
-            };
             _dbContext.Database.EnsureDeleted();
 
             // Act & Assert
             Assert.ThrowsAsync<ApplicationException>(async () =>
-                await _transactionService.UpdateTransactionStatus(transaction, Status.Completed));
+                await _transactionService.UpdateTransactionStatus(It.IsAny<Transaction>(), It.IsAny<Status>()));
         }
 
         [Test]
@@ -219,19 +211,11 @@ namespace TransactionAPI.Tests.Services.Transactions
         public async Task MergeTransaction_DatabaseError_ThrowsApplicationException()
         {
             // Arrange
-            var transaction = new Transaction
-            {
-                TransactionId = 1,
-                Status = Status.Pending,
-                Type = Type.Withdrawal,
-                ClientName = "John",
-                Amount = 100
-            };
             _dbContext.Database.EnsureDeleted();
 
             // Act & Assert
             Assert.ThrowsAsync<ApplicationException>(async () =>
-                await _transactionService.MergeTransaction(transaction));
+                await _transactionService.MergeTransaction(It.IsAny<Transaction>()));
         }
 
         [Test]

@@ -12,7 +12,6 @@ namespace TransactionAPI.Tests.Services.Authentication
     public class JwtTokenServiceTests
     {
         private JwtTokenService _jwtTokenService;
-        private Mock<JwtTokenService> _jwtTokenServiceMock;
         private Mock<IConfiguration> _configurationMock;
         private Mock<IUserService> _userServiceMock;
         private Mock<ILogger<JwtTokenService>> _loggerMock;
