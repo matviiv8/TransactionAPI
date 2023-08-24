@@ -42,6 +42,7 @@ Request Logging middleware implemented as `RequestLoggingMiddleware` class. It r
 The TransactionAPI project is built using the following technologies:
 
 - ASP.NET Core: A cross-platform, high-performance framework for building modern web applications using C#.
+- ADO.NET: A comprehensive data access technology in the .NET framework that includes classes like SqlConnection, SqlCommand, and SqlDataReader to manage SQL Server database interactions securely and efficiently.
 - Entity Framework Core: An Object-Relational Mapping (ORM) tool that simplifies database interactions and provides data access to the application.
 - SQL Server: The database management system used to store transaction data.
 - Swagger: A tool for generating interactive API documentation, allowing users to explore and test the API endpoints.
